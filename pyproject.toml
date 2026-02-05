@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-aegis"
+version = "0.1.0"
+description = "AEGIS: agent security evaluation harness"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.0",
+  "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+  "mypy>=1.10",
+]
+
+[project.scripts]
+aegis = "aegis.cli:main"
+
+[tool.setuptools]
+packages = ["aegis", "aegis.core", "aegis.scenarios", "aegis.tools", "aegis.defenses", "aegis.eval"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
