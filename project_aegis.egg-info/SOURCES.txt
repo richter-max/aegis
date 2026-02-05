@@ -10,6 +10,7 @@ aegis/defenses/approval_monitor.py
 aegis/eval/judge.py
 aegis/scenarios/__init__.py
 aegis/tools/__init__.py
+aegis/tools/search_local_page.py
 aegis/tools/send_email.py
 project_aegis.egg-info/PKG-INFO
 project_aegis.egg-info/SOURCES.txt
