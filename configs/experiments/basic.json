@@ -6,5 +6,6 @@
     "token_smuggling_01"
   ],
   "policies": ["strict", "permissive"],
-  "guard": "layered"
+  "guard": "layered",
+  "report_root": "reports/bench"
 }

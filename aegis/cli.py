@@ -96,12 +96,14 @@ def main() -> None:
     ev.add_argument("--latest", action="store_true", help="Evaluate the latest run in runs/")
 
     # --- bench ---
-    b = sub.add_parser("bench", help="Run multiple scenarios/policies and write a summary")
+    b = sub.add_parser("bench", help="Run multiple scenarios/policies and write a report folder")
     b.add_argument("--config", help="Path to bench config JSON (overrides other flags)")
-    b.add_argument("--out", default="runs", help="Runs root folder")
+    b.add_argument("--out", default="runs", help="Runs folder name inside report dir (default: runs)")
     b.add_argument("--scenarios", nargs="+", default=["indirect_injection_01", "context_fragmentation_01", "token_smuggling_01"])
     b.add_argument("--policies", nargs="+", default=["strict", "permissive"])
     b.add_argument("--guard", choices=guard_choices, default="none", help="Guardrails layer")
+    b.add_argument("--report-root", default="reports/bench", help="Root folder for reports")
+    b.add_argument("--report-id", help="Optional report id (folder name). Default: timestamp")
 
     args = parser.parse_args()
 
@@ -198,17 +200,30 @@ def main() -> None:
             scenarios = cfg.scenarios
             policies = cfg.policies
             guard = cfg.guard
+            report_root = cfg.report_root
+            report_id = cfg.report_id
             print(f"[bold]Using config:[/bold] [cyan]{Path(args.config).resolve()}[/cyan]")
         else:
             out_root = args.out
             scenarios = args.scenarios
             policies = args.policies
             guard = args.guard
+            report_root = args.report_root
+            report_id = args.report_id
 
-        res = bench(out_root=out_root, scenarios=scenarios, policies=policies, guard=guard)
+        res = bench(
+            out_root=out_root,
+            scenarios=scenarios,
+            policies=policies,
+            guard=guard,
+            report_root=report_root,
+            report_id=report_id,
+        )
+
         print("[bold green]AEGIS BENCH[/bold green] ✅")
-        print(f"Summary JSON: [cyan]{Path(res['summary_json']).resolve()}[/cyan]")
-        print(f"Summary MD:   [cyan]{Path(res['summary_md']).resolve()}[/cyan]\n")
+        print(f"Summary JSON:   [cyan]{Path(res['summary_json']).resolve()}[/cyan]")
+        print(f"Summary MD:     [cyan]{Path(res['summary_md']).resolve()}[/cyan]")
+        print(f"README snippet: [cyan]{Path(res['snippet_md']).resolve()}[/cyan]\n")
 
         for r in res["payload"]["results"]:
             print(
@@ -225,4 +240,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
