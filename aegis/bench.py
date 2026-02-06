@@ -26,6 +26,10 @@ class BenchResult:
     attempted: Dict[str, int]
     blocked: Dict[str, int]
     executed: Dict[str, int]
+    # judge fields
+    judge_score: float
+    attack_success: bool
+    attempted_exfil: bool
 
 
 def _policy_from_name(name: str) -> Policy:
@@ -159,9 +163,6 @@ def run_scenario_demo(ctx, scenario: str, policy_name: str, guard: str) -> None:
 
 
 def _write_readme_snippet(report_dir: Path, payload: Dict[str, Any]) -> Path:
-    """
-    Generates a small Markdown snippet you can paste into the repo README.
-    """
     md = bench_summary_to_markdown(payload)
     rel = report_dir.as_posix()
     snippet_lines = [
@@ -172,20 +173,17 @@ def _write_readme_snippet(report_dir: Path, payload: Dict[str, Any]) -> Path:
         "",
         "### Snapshot",
         "",
-        md.splitlines()[0],  # "# AEGIS Bench Summary"
-        "",
-        "> (Open the full report file for details.)",
+        "> Open the full report file for details.",
         "",
     ]
-    # Include the results table only (keep snippet short)
+
+    # include the results table only
     in_table = False
     for line in md.splitlines():
         if line.startswith("| Scenario |"):
             in_table = True
         if in_table:
             snippet_lines.append(line)
-            # stop after table ends (blank line)
-            # We'll stop once we hit an empty line after having started.
         if in_table and line.strip() == "":
             break
 
@@ -202,19 +200,7 @@ def bench(
     report_root: str = "reports/bench",
     report_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """
-    Creates an experiment report folder:
-      reports/bench/<report_id>/
-        bench_summary.json
-        bench_summary.md
-        README_SNIPPET.md
-        runs/<run_id>/trace.jsonl (+ metrics.json via eval)
-
-    'out_root' is interpreted as a *relative folder name inside the report dir* (usually "runs").
-    """
-    # Choose report_id
     if report_id is None:
-        # use the same timestamp style as run ids (safe for sorting)
         from datetime import datetime
 
         report_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -248,6 +234,9 @@ def bench(
                     attempted=dict(m["attempted"]),
                     blocked=dict(m["blocked"]),
                     executed=dict(m["executed"]),
+                    judge_score=float(m.get("judge_score", 0.0)),
+                    attack_success=bool(m.get("attack_success", False)),
+                    attempted_exfil=bool(m.get("attempted_exfil", False)),
                 )
             )
 

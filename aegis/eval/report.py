@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 
 def _md_escape(s: str) -> str:
     return s.replace("|", "\\|").replace("\n", " ")
 
 
+def _rate(numer: int, denom: int) -> str:
+    if denom <= 0:
+        return "—"
+    return f"{(numer / denom) * 100:.1f}%"
+
+
 def bench_summary_to_markdown(payload: Dict[str, Any]) -> str:
+    report_dir = str(payload.get("report_dir", ""))
+    runs_dir = str(payload.get("runs_dir", ""))
     out_root = str(payload.get("out_root", "runs"))
     scenarios: List[str] = list(payload.get("scenarios", []))
     policies: List[str] = list(payload.get("policies", []))
@@ -21,16 +29,22 @@ def bench_summary_to_markdown(payload: Dict[str, Any]) -> str:
     lines.append("# AEGIS Bench Summary")
     lines.append("")
     lines.append(f"- Generated: **{now}**")
-    lines.append(f"- Runs folder: `{out_root}`")
+    if report_dir:
+        lines.append(f"- Report dir: `{report_dir}`")
+    if runs_dir:
+        lines.append(f"- Runs dir: `{runs_dir}`")
+    else:
+        lines.append(f"- Runs folder: `{out_root}`")
     lines.append(f"- Guard: `{guard}`")
     lines.append(f"- Scenarios: {', '.join(f'`{s}`' for s in scenarios) if scenarios else '—'}")
     lines.append(f"- Policies: {', '.join(f'`{p}`' for p in policies) if policies else '—'}")
     lines.append("")
 
+    # Results table
     lines.append("## Results")
     lines.append("")
-    lines.append("| Scenario | Policy | Guard | Email Executed (mocked) | Blocked | Executed | Run ID |")
-    lines.append("|---|---|---|---:|---|---|---|")
+    lines.append("| Scenario | Policy | Guard | Exfil Attempt | Blocked | Email Executed (mocked) | Judge Score | Run ID |")
+    lines.append("|---|---|---|---:|---:|---:|---:|---|")
 
     results_sorted = sorted(results, key=lambda r: (r.get("scenario", ""), r.get("policy", "")))
 
@@ -38,19 +52,58 @@ def bench_summary_to_markdown(payload: Dict[str, Any]) -> str:
         scenario = _md_escape(str(r.get("scenario", "")))
         policy = _md_escape(str(r.get("policy", "")))
         rg = _md_escape(str(r.get("guard", guard)))
+
+        attempted_exfil = "✅" if r.get("attempted_exfil") else "❌"
+        # We count blocked if send_email was blocked at least once
+        blocked_map = r.get("blocked") or {}
+        blocked_any = False
+        if isinstance(blocked_map, dict):
+            blocked_any = (blocked_map.get("send_email", 0) or 0) > 0
+        blocked_icon = "✅" if blocked_any else "❌"
+
         email_exec = "✅" if r.get("email_executed_mocked") else "❌"
-        blocked = _md_escape(str(r.get("blocked", {})))
-        executed = _md_escape(str(r.get("executed", {})))
+        judge_score = f"{float(r.get('judge_score', 0.0)):.2f}"
         run_id = _md_escape(str(r.get("run_id", "")))
 
-        lines.append(f"| `{scenario}` | `{policy}` | `{rg}` | {email_exec} | `{blocked}` | `{executed}` | `{run_id}` |")
+        lines.append(
+            f"| `{scenario}` | `{policy}` | `{rg}` | {attempted_exfil} | {blocked_icon} | {email_exec} | {judge_score} | `{run_id}` |"
+        )
+
+    # Aggregations
+    lines.append("")
+    lines.append("## Aggregate")
+    lines.append("")
+    # success rate = count attack_success / total
+    # per policy
+    agg: Dict[Tuple[str, str], Dict[str, int]] = {}
+    for r in results:
+        pol = str(r.get("policy", ""))
+        g = str(r.get("guard", guard))
+        key = (pol, g)
+        if key not in agg:
+            agg[key] = {"total": 0, "success": 0, "attempted": 0}
+        agg[key]["total"] += 1
+        if r.get("attack_success"):
+            agg[key]["success"] += 1
+        if r.get("attempted_exfil"):
+            agg[key]["attempted"] += 1
+
+    lines.append("| Policy | Guard | Runs | Exfil Attempts | Attack Success | Success Rate |")
+    lines.append("|---|---|---:|---:|---:|---:|")
+    for (pol, g), a in sorted(agg.items(), key=lambda x: (x[0][0], x[0][1])):
+        total = a["total"]
+        attempted = a["attempted"]
+        success = a["success"]
+        lines.append(
+            f"| `{_md_escape(pol)}` | `{_md_escape(g)}` | {total} | {attempted} | {success} | {_rate(success, total)} |"
+        )
 
     lines.append("")
     lines.append("## Interpretation (quick)")
     lines.append("")
-    lines.append("- `strict` blocks high-risk tools by policy.")
     lines.append("- `permissive` is intentionally unsafe (baseline).")
-    lines.append("- Guards (`keywords`, `semantic`, `layered`) add defense-in-depth even when policy is permissive.")
+    lines.append("- `strict` blocks high-risk actions by policy.")
+    lines.append("- `layered` should reduce success even under `permissive` by adding guardrails.")
     lines.append("")
 
     return "\n".join(lines)
