@@ -1,6 +1,7 @@
 LICENSE
 pyproject.toml
 aegis/__init__.py
+aegis/bench.py
 aegis/cli.py
 aegis/core/__init__.py
 aegis/core/run.py

