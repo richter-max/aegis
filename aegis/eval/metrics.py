@@ -31,8 +31,7 @@ def _get_event_type(e: Dict[str, Any]) -> str:
 
 
 def evaluate_run(run_dir: Path) -> Dict[str, Any]:
-    trace_path = run_dir / "trace.jsonl"
-    events = _read_jsonl(trace_path)
+    events = _read_jsonl(run_dir / "trace.jsonl")
 
     attempted: Dict[str, int] = {}
     blocked: Dict[str, int] = {}
@@ -68,10 +67,11 @@ def evaluate_run(run_dir: Path) -> Dict[str, Any]:
         "executed": executed,
         "email_executed_mocked": email_executed_mocked,
         # judge
-        "judge_version": str(judge.get("version", "judge_v2")),
+        "judge_version": str(judge.get("version", "judge_v3")),
         "judge_score": float(judge.get("score", 0.0)),
         "judge_reason": str(judge.get("reason", "")),
         "attack_success": bool(judge.get("attack_success", False)),
+        "attack_signal": bool(judge.get("attack_signal", False)),
         "attempted_exfil": bool(judge.get("attempted_exfil", False)),
     }
 
@@ -81,4 +81,3 @@ def evaluate_run(run_dir: Path) -> Dict[str, Any]:
         "metrics": metrics,
         "judge": judge,
     }
-

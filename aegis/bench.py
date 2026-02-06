@@ -29,6 +29,7 @@ class BenchResult:
     judge_score: float
     judge_reason: str
     attack_success: bool
+    attack_signal: bool
     attempted_exfil: bool
 
 
@@ -236,6 +237,7 @@ def bench(
                     judge_score=float(m.get("judge_score", 0.0)),
                     judge_reason=str(m.get("judge_reason", "")),
                     attack_success=bool(m.get("attack_success", False)),
+                    attack_signal=bool(m.get("attack_signal", False)),
                     attempted_exfil=bool(m.get("attempted_exfil", False)),
                 )
             )
