@@ -8,6 +8,20 @@ Instead of optimizing prompts or building agent demos, AEGIS answers:
 
 ---
 
+## 🛡️ Security Engineering Portfolio
+
+This project demonstrates **tier-1 security engineering practices**:
+
+| Domain | Implementation |
+| :--- | :--- |
+| **Threat Modeling** | Formal [STRIDE analysis](THREAT_MODEL.md) of the agent harness boundaries. |
+| **Fuzzing** | Property-based testing using **Hypothesis** to find edge cases in guards. |
+| **Static Analysis** | Automated **Bandit** scanning in CI/CD to catch python vulnerabilities. |
+| **CI/CD** | Full GitHub Actions pipeline (Linting, Type Checking, Testing). |
+| **Policy** | Vulnerability disclosure policy defined in [SECURITY.md](SECURITY.md). |
+
+---
+
 ## Why AEGIS exists
 
 Modern AI agents combine:
@@ -114,7 +128,44 @@ The agent logic is intentionally minimal. The key property is that security-rele
 
 ## Reproducible experiments
 
-Experiments can be described via JSON configuration files.
+
+### Running Tests & Fuzzing
+
+Ensure you have the dev dependencies installed:
+
+```bash
+pip install -e .[dev]
+```
+
+Run the full suite (Unit, Integration, Fuzzing):
+
+```bash
+# Run unit and integration tests
+pytest
+
+# Run fuzzing campaign
+pytest fuzz/fuzz_guards.py
+```
+
+### 📊 Security Command Center (Dashboard)
+
+Visualize run telemetry in the new **AEGIS Security Command Center**:
+
+- **Real-time Event Stream**: Live monitoring of agent tool use.
+- **Policy Analytics**: Charts showing Allowed vs Blocked actions.
+- **Trace Analysis**: Deep dive into individual tool calls and defense logic.
+- **Professional UI**: Dark-mode security aesthetic.
+
+Launch locally:
+
+```bash
+streamlit run dashboard/app.py
+```
+
+Access at: **http://localhost:8501**
+
+
+### Reproducible experiments
 
 Example:
 

@@ -28,3 +28,5 @@ project_aegis.egg-info/dependency_links.txt
 project_aegis.egg-info/entry_points.txt
 project_aegis.egg-info/requires.txt
 project_aegis.egg-info/top_level.txt
+tests/test_core.py
+tests/test_guards.py

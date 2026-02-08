@@ -1,4 +1,4 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: project-aegis
 Version: 0.1.0
 Summary: AEGIS: agent security evaluation harness
@@ -6,8 +6,11 @@ Requires-Python: >=3.10
 License-File: LICENSE
 Requires-Dist: pydantic>=2.0
 Requires-Dist: rich>=13.0
+Requires-Dist: streamlit>=1.30
+Requires-Dist: plotly>=5.18
+Requires-Dist: pandas>=2.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0; extra == "dev"
 Requires-Dist: ruff>=0.6; extra == "dev"
 Requires-Dist: mypy>=1.10; extra == "dev"
-Dynamic: license-file
+Requires-Dist: hypothesis>=6.0; extra == "dev"
