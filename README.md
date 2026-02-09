@@ -133,6 +133,9 @@ The agent logic is intentionally minimal. The key property is that security-rele
 
 ## Reproducible experiments
 
+AEGIS is designed for deterministic, repeatable security evaluation.  
+All experiments produce traceable evidence rather than qualitative impressions.
+
 ### Quick Start (60 seconds)
 
 ```bash
@@ -141,7 +144,11 @@ pip install -e .
 
 # Run a reproducible security benchmark
 aegis bench --config configs/experiments/basic.json
-````
+```
+This produces:
+a deterministic event trace (trace.jsonl)
+aggregated security metrics
+a benchmark report for policy and guard comparison
 
 Run the full suite (Unit, Integration, Fuzzing):
 
@@ -155,15 +162,13 @@ pytest fuzz/fuzz_guards.py
 
 ### 📊 Security Command Center (Dashboard)
 
-Visualize run telemetry in the new **AEGIS Security Command Center**:
+The AEGIS Security Command Center provides exploratory analysis of evaluation runs.
+It is intended for debugging, inspection, and comparison — not operational monitoring.
 
-- **Real-time Event Stream**: Live monitoring of agent tool use.
-- **Policy Analytics**: Charts showing Allowed vs Blocked actions.
-- **Trace Analysis**: Deep dive into individual tool calls and defense logic.
-
-The dashboard is intended for exploratory analysis of traces and policy behavior,
-not for operational monitoring.
-
+Features include:
+- **Event Stream**: chronological view of agent tool proposals and defense decisions
+- **Policy Analytics**: allowed vs. blocked actions by policy and guard layer
+- **Trace Analysis**: inspection of individual tool calls and guard reasoning
 
 Launch locally:
 
