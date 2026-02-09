@@ -146,9 +146,9 @@ pip install -e .
 aegis bench --config configs/experiments/basic.json
 ```
 This produces:
-a deterministic event trace (trace.jsonl)
-aggregated security metrics
-a benchmark report for policy and guard comparison
+- a deterministic event trace (trace.jsonl)
+- aggregated security metrics
+- a benchmark report for policy and guard comparison
 
 Run the full suite (Unit, Integration, Fuzzing):
 
