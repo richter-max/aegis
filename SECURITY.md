@@ -14,7 +14,7 @@ If you discover a security vulnerability in AEGIS (e.g., a bypass of the defense
 ### Process
 
 1.  **Do not** open a public issue.
-2.  Email the maintainers at `security@example.com` (replace with actual email).
+2.  Email the maintainers at `max.richter.dev@proton.me` 
 3.  Include a reproduction script (scenario) demonstrating the bypass.
 4.  We will respond within 48 hours.
 
