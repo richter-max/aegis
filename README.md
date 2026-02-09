@@ -1,6 +1,10 @@
 # AEGIS — Security Evaluation Harness for Tool-Using AI Agents
 
-AEGIS is a **security evaluation framework** for tool-using AI agents. It focuses on **realistic attack simulation**, **defense-in-depth**, and **reproducible benchmarks**.
+AEGIS is a security evaluation harness for tool-using AI agents.
+
+It is built to answer a simple but uncomfortable question:
+
+> When AI agents are exposed to untrusted input, how do they fail — and which defenses actually reduce risk?
 
 Instead of optimizing prompts or building agent demos, AEGIS answers:
 
@@ -10,7 +14,8 @@ Instead of optimizing prompts or building agent demos, AEGIS answers:
 
 ## 🛡️ Security Engineering Portfolio
 
-This project demonstrates **tier-1 security engineering practices**:
+This repository is intentionally designed as a security engineering portfolio,
+demonstrating how to reason about, test, and measure AI agent failure modes.
 
 | Domain | Implementation |
 | :--- | :--- |
