@@ -1,6 +1,10 @@
 # AEGIS — Security Evaluation Harness for Tool-Using AI Agents
 
-AEGIS is a **security evaluation framework** for tool-using AI agents. It focuses on **realistic attack simulation**, **defense-in-depth**, and **reproducible benchmarks**.
+AEGIS is a security evaluation harness for tool-using AI agents.
+
+It is built to answer a simple but uncomfortable question:
+
+> When AI agents are exposed to untrusted input, how do they fail — and which defenses actually reduce risk?
 
 Instead of optimizing prompts or building agent demos, AEGIS answers:
 
@@ -8,9 +12,10 @@ Instead of optimizing prompts or building agent demos, AEGIS answers:
 
 ---
 
-## 🛡️ Security Engineering Portfolio
+## Security Engineering Portfolio
 
-This project demonstrates **tier-1 security engineering practices**:
+This repository is intentionally designed as a security engineering portfolio,
+demonstrating how to reason about, test, and measure AI agent failure modes.
 
 | Domain | Implementation |
 | :--- | :--- |
@@ -128,14 +133,23 @@ The agent logic is intentionally minimal. The key property is that security-rele
 
 ## Reproducible experiments
 
+AEGIS is designed for deterministic, repeatable security evaluation.  
+All experiments produce traceable evidence rather than qualitative impressions.
 
-### Running Tests & Fuzzing
-
-Ensure you have the dev dependencies installed:
+### Quick Start (60 seconds)
 
 ```bash
-pip install -e .[dev]
+# Install AEGIS in editable mode
+pip install -e .
+
+# Run a reproducible security benchmark
+aegis bench --config configs/experiments/basic.json
 ```
+This produces:
+- a deterministic event trace (trace.jsonl)
+- aggregated security metrics
+- a benchmark report for policy and guard comparison
+
 
 Run the full suite (Unit, Integration, Fuzzing):
 
@@ -149,12 +163,13 @@ pytest fuzz/fuzz_guards.py
 
 ### 📊 Security Command Center (Dashboard)
 
-Visualize run telemetry in the new **AEGIS Security Command Center**:
+The AEGIS Security Command Center provides exploratory analysis of evaluation runs.
+It is intended for debugging, inspection, and comparison — not operational monitoring.
 
-- **Real-time Event Stream**: Live monitoring of agent tool use.
-- **Policy Analytics**: Charts showing Allowed vs Blocked actions.
-- **Trace Analysis**: Deep dive into individual tool calls and defense logic.
-- **Professional UI**: Dark-mode security aesthetic.
+Features include:
+- **Event Stream**: chronological view of agent tool proposals and defense decisions
+- **Policy Analytics**: allowed vs. blocked actions by policy and guard layer
+- **Trace Analysis**: inspection of individual tool calls and guard reasoning
 
 Launch locally:
 
@@ -165,10 +180,16 @@ streamlit run dashboard/app.py
 Access at: **http://localhost:8501**
 
 
-### Reproducible experiments
+## Contact
 
-Example:
+📧 **max.richter.dev@proton.me**
 
-```bash
-aegis bench --config configs/experiments/basic.json
+<a href="https://www.linkedin.com/in/maximilian-richter-40697a298/">
+  <img src="https://img.shields.io/badge/-LinkedIn-0072b1?&style=for-the-badge&logo=linkedin&logoColor=white" />
+</a>
+
+<a href="https://github.com/cleamax">
+  <img src="https://img.shields.io/badge/-GitHub-181717?&style=for-the-badge&logo=github&logoColor=white" />
+</a>
+
 
