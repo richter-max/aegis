@@ -12,7 +12,7 @@ Instead of optimizing prompts or building agent demos, AEGIS answers:
 
 ---
 
-## 🛡️ Security Engineering Portfolio
+## Security Engineering Portfolio
 
 This repository is intentionally designed as a security engineering portfolio,
 demonstrating how to reason about, test, and measure AI agent failure modes.
