@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from aegis.core.run import RunContext, TraceWriter
 from aegis.defenses.approval_monitor import Policy
 

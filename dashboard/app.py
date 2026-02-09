@@ -3,7 +3,6 @@ import pandas as pd  # type: ignore
 import json
 from pathlib import Path
 import plotly.express as px  # type: ignore
-import plotly.graph_objects as go  # type: ignore
 
 # Page Config
 st.set_page_config(
@@ -221,11 +220,11 @@ for event in data:
             c_a, c_b = st.columns([1, 3])
             
             with c_a:
-                st.markdown(f"**STATUS**")
+                st.markdown("**STATUS**")
                 st.markdown(f"<div style='color:{status_color}; font-weight:bold; border:1px solid {status_color}; padding:5px; text-align:center; border-radius:4px;'>{status_text}</div>", unsafe_allow_html=True)
                 
             with c_b:
-                st.markdown(f"**REASONING**")
+                st.markdown("**REASONING**")
                 st.write(event.get('reason', 'N/A'))
             
             st.markdown("**ARGUMENTS**")

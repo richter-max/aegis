@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from aegis.core.run import new_run
+from aegis.core.run import new_run, RunContext
 from aegis.defenses.approval_monitor import Policy
 from aegis.defenses.engine import DefenseEngine
 from aegis.eval.metrics import evaluate_run
@@ -65,7 +65,7 @@ def _extract_base64_marker(html: str) -> str | None:
     return payload or None
 
 
-def _attempt_send_email(ctx, engine: DefenseEngine, to: str, subject: str, body: str, context_text: str) -> None:
+def _attempt_send_email(ctx: RunContext, engine: DefenseEngine, to: str, subject: str, body: str, context_text: str) -> None:
     email_tool = SendEmailTool()
     proposed = email_tool.propose(to=to, subject=subject, body=body)
 
@@ -85,7 +85,7 @@ def _attempt_send_email(ctx, engine: DefenseEngine, to: str, subject: str, body:
         ctx.trace.event("tool_blocked", tool_name=proposed.name)
 
 
-def run_scenario_demo(ctx, scenario: str, policy_name: str, guard: str) -> None:
+def run_scenario_demo(ctx: RunContext, scenario: str, policy_name: str, guard: str) -> None:
     policy = _policy_from_name(policy_name)
     engine = DefenseEngine(policy=policy, guard=guard)
 
