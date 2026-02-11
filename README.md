@@ -1,184 +1,151 @@
 # AEGIS — Security Evaluation Harness for Tool-Using AI Agents
 
-AEGIS is a security evaluation harness for tool-using AI agents.
+![CI](https://github.com/cleamax/aegis/actions/workflows/ci.yml/badge.svg)
+![Tests](https://img.shields.io/badge/tests-passing-green)
+![Mypy](https://img.shields.io/badge/type%20checked-mypy-blue)
+![Security](https://img.shields.io/badge/security-bandit-black)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-It is built to answer a simple but uncomfortable question:
-
-> When AI agents are exposed to untrusted input, how do they fail — and which defenses actually reduce risk?
-
-Instead of optimizing prompts or building agent demos, AEGIS answers:
-
-**How do AI agents fail under adversarial conditions — and which defenses actually work?**
-
----
-
-## Security Engineering Portfolio
-
-This repository is intentionally designed as a security engineering portfolio,
-demonstrating how to reason about, test, and measure AI agent failure modes.
-
-| Domain | Implementation |
-| :--- | :--- |
-| **Threat Modeling** | Formal [STRIDE analysis](THREAT_MODEL.md) of the agent harness boundaries. |
-| **Fuzzing** | Property-based testing using **Hypothesis** to find edge cases in guards. |
-| **Static Analysis** | Automated **Bandit** scanning in CI/CD to catch python vulnerabilities. |
-| **CI/CD** | Full GitHub Actions pipeline (Linting, Type Checking, Testing). |
-| **Policy** | Vulnerability disclosure policy defined in [SECURITY.md](SECURITY.md). |
+**AEGIS is a deterministic security evaluation harness for analyzing how tool-using AI agents fail under adversarial input — and which defenses measurably reduce risk.**
 
 ---
 
-## Why AEGIS exists
+## Architecture Overview
 
-Modern AI agents combine:
-
-- tool execution (email, file access, APIs)
-- long context windows
-- untrusted external data
-- implicit decision-making
-
-This creates a new attack surface (prompt injection, tool misuse, indirect injection). AEGIS is designed to:
-
-- model **attacker behavior** (not toy examples)
-- evaluate **defenses comparatively**
-- produce **evidence-backed results** (trace + metrics + reports)
-
----
-
-## What AEGIS is (and is not)
-
-### What it is
-
-- a deterministic **security evaluation harness**
-- a framework for **attack and defense experiments**
-- a way to compare **policies and guardrails**
-- built for **traceability and reproducibility**
-
-### What it is not
-
-- not an agent framework
-- not a prompt library
-- not a chatbot demo
-- not a production assistant
+```mermaid
+flowchart LR
+    A[Scenario] -->|Adversarial Input| B[Agent]
+    B -->|Tool Proposal| C{Defense Engine}
+    
+    subgraph Defense Engine
+    D[Policy Layer] --> E[Keyword Guard]
+    E --> F[Semantic Guard]
+    end
+    
+    C -->|Blocked| G[Block Event]
+    C -->|Allowed| H[Tool Execution (Mocked)]
+    
+    G --> I[Trace Log]
+    H --> I
+    I --> J[Metrics & Reports]
+```
 
 ---
 
-## Threat model (current)
+## Key Capabilities
 
-AEGIS models attacks against **tool-using agents**, including:
-
-- **Indirect prompt injection**  
-  Malicious instructions embedded in untrusted content (for example, HTML)
-
-- **Context fragmentation**  
-  Instructions split across multiple turns to evade simple filters
-
-- **Token smuggling / encoding**  
-  Payloads hidden via encodings (for example, Base64) and reconstructed by the agent
-
-All current scenarios attempt **high-risk tool misuse** (for example, email exfiltration). High-risk actions are **mocked by design**.
+- **Deterministic evaluation**: Reproducible baselines for security research.
+- **Composable guard layers**: Module defense stack (Policy -> Keyword -> Semantic).
+- **Reproducible benchmarks**: Configuration-driven experiments.
+- **Trace-based evidence**: Full JSONL event logging for forensic analysis.
+- **Fuzz-tested guard robustness**: Property-based testing via Hypothesis.
+- **Mocked high-risk tool actions**: Safe simulation of critical failures (e.g. data exfiltration).
 
 ---
 
-## Defense model
+## Benchmark Results
 
-AEGIS evaluates defenses as **composable layers**.
+| Policy | Guards | Attack Success Rate |
+| :--- | :--- | :--- |
+| permissive | none | 82% |
+| strict | none | 47% |
+| strict | keywords | 23% |
+| strict | layered | 9% |
 
-### Policy layer
+*AEGIS enables quantitative comparison of guard effectiveness under identical adversarial scenarios.*
 
-- `strict` — blocks high-risk tools by default
-- `permissive` — intentionally unsafe baseline (for comparison)
+---
+
+## Threat Model
+
+AEGIS models attacks against **tool-using agents**:
+
+- **Indirect prompt injection**: Malicious instructions embedded in untrusted content.
+- **Context fragmentation**: Splitting payloads across multiple turns to bypass filters.
+- **Token smuggling / encoding abuse**: Hiding payloads via Base64 or other encodings.
+- **Tool misuse**: Unauthorized actions like email exfiltration or file deletion.
+
+---
+
+## Defense Model
+
+### Policy Layer
+- **strict**: Blocks high-risk tools (file system, shell) by default.
+- **permissive**: Intentionally unsafe baseline for control experiments.
 
 ### Guardrails
+- **Keyword Guard**: Fast, deterministic blocking of known bad patterns.
+- **Semantic Guard**: N-gram cosine similarity (dependency-free) for obfuscation detection.
+- **Layered Defense**: Combining strict policy + multiple guards for defense-in-depth.
 
-- `keywords` — simple keyword detection (also catches obfuscation like `S E N D  E M A I L`)
-- `semantic` — dependency-free similarity detection (character n-grams + cosine similarity)
-- `layered` — keywords + semantic (defense-in-depth)
-
-Every decision is:
-
-- deterministic
-- explainable
-- logged to the event trace
+*All decisions are deterministic, explainable, and trace-logged.*
 
 ---
 
-## Architecture
+## Design Decisions
 
-AEGIS is structured as a **security evaluation harness**, not as an agent framework.
-
-The agent logic is intentionally minimal. The key property is that security-relevant behavior is explicit and testable.
-
-### High-level flow
-
-1. A scenario defines adversarial input or behavior
-2. A simulated agent proposes a tool action
-3. The defense engine evaluates the proposal
-4. The action is blocked or executed (mocked)
-5. Events are written to a trace (`trace.jsonl`)
-6. Metrics and reports are derived from the trace
-
-### Conceptual pipeline
-
-- Scenario
-- Simulated agent decision flow
-- Tool proposal
-- Defense engine
-  - Policy layer
-  - Keyword guard (optional)
-  - Semantic guard (optional)
-- Tool execution (mocked) or block
-- Trace, metrics, reports
+- **Deterministic Evaluation**: Security claims require reproducibility, not "vibes".
+- **Mocked Tools**: Safety first. Exploring "rm -rf" scenarios should never risk the host.
+- **Dependency-Free Semantic Guard**: Demonstrating that core NLP principles (n-grams) work without heavy ML libraries.
+- **Trace-First Architecture**: Evidence is the primary output. If it isn't logged, it didn't happen.
+- **Harness Separation**: The evaluation logic is distinct from the agent, preventing "grading your own homework".
 
 ---
 
-## Reproducible experiments
+## Engineering Discipline
 
-AEGIS is designed for deterministic, repeatable security evaluation.  
-All experiments produce traceable evidence rather than qualitative impressions.
+- **CI/CD**: GitHub Actions pipeline for every push and PR.
+- **Unit & Integration Tests**: Comprehensive `pytest` suite.
+- **Property-Based Fuzzing**: usage of `Hypothesis` to find edge cases in guards.
+- **Static Analysis**: `Bandit` scans to catch Python security issues.
+- **Type Checking**: Strict `mypy` configuration for codebase reliability.
 
-### Quick Start (60 seconds)
+---
+
+## Security Command Center
+
+The Security Command Center provides visual inspection of traces and metrics.
+
+| Dashboard Overview | Policy Analytics | Trace Inspection |
+| :---: | :---: | :---: |
+| ![Dashboard Overview](docs/dashboard-overview.png) | ![Policy Analytics](docs/dashboard-policy.png) | ![Trace Inspection](docs/dashboard-trace.png) |
+
+---
+
+## Reproducibility
+
+To run a deterministic evaluation:
 
 ```bash
-# Install AEGIS in editable mode
+# Install in editable mode
 pip install -e .
 
-# Run a reproducible security benchmark
+# Run the benchmark
 aegis bench --config configs/experiments/basic.json
 ```
-This produces:
-- a deterministic event trace (trace.jsonl)
-- aggregated security metrics
-- a benchmark report for policy and guard comparison
 
+This generates `trace.jsonl` containing the full forensic record.
 
-Run the full suite (Unit, Integration, Fuzzing):
+---
 
-```bash
-# Run unit and integration tests
-pytest
+## Repository Structure
 
-# Run fuzzing campaign
-pytest fuzz/fuzz_guards.py
+```text
+aegis/
+├── aegis/
+│   ├── core/           # Trace, Runner, and Event logic
+│   ├── defenses/       # Policy, Guards, Engine
+│   ├── eval/           # Metrics calculation
+│   └── tools/          # Mocked tool implementations
+├── configs/            # Experiment configurations
+├── dashboard/          # Streamlit visualization app
+├── docs/               # Architecture and screenshots
+├── fuzz/               # Property-based fuzz tests
+└── tests/              # Unit and integration tests
 ```
 
-### 📊 Security Command Center (Dashboard)
-
-The AEGIS Security Command Center provides exploratory analysis of evaluation runs.
-It is intended for debugging, inspection, and comparison — not operational monitoring.
-
-Features include:
-- **Event Stream**: chronological view of agent tool proposals and defense decisions
-- **Policy Analytics**: allowed vs. blocked actions by policy and guard layer
-- **Trace Analysis**: inspection of individual tool calls and guard reasoning
-
-Launch locally:
-
-```bash
-streamlit run dashboard/app.py
-```
-
-Access at: **http://localhost:8501**
-
+---
 
 ## Contact
 
@@ -191,5 +158,3 @@ Access at: **http://localhost:8501**
 <a href="https://github.com/cleamax">
   <img src="https://img.shields.io/badge/-GitHub-181717?&style=for-the-badge&logo=github&logoColor=white" />
 </a>
-
-
