@@ -33,6 +33,7 @@ packages = ["aegis", "aegis.core", "aegis.scenarios", "aegis.tools", "aegis.defe
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "--cov=aegis --cov-report=term-missing"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["aegis"]
