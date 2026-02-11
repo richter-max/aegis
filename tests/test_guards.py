@@ -7,7 +7,7 @@ def test_keyword_guard_blocks_known_bad():
     call = ToolCall(name="send_email", args={"body": "this is evil content"})
     decision = guard.decide(call, context_text="")
     assert decision.blocked
-    assert "evil" in decision.matched_keyword
+    assert "evil" in decision.reason
 
 def test_keyword_guard_allows_safe():
     guard = KeywordGuard(KeywordGuardConfig(keywords=["bad", "evil"]))

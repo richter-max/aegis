@@ -16,19 +16,19 @@ def test_trace_writer_creates_file(tmp_path):
     lines = trace_file.read_text().strip().split("\n")
     assert len(lines) == 1
     data = json.loads(lines[0])
-    assert data["event_type"] == "test_event"
-    assert data["content"]["foo"] == "bar"
+    assert data["kind"] == "test_event"
+    assert data["foo"] == "bar"
 
 def test_defense_engine_strict_policy_blocks_all():
-    engine = DefenseEngine(policy=Policy.STRICT, guard="none")
+    engine = DefenseEngine(policy=Policy.default(), guard="none")
     call = ToolCall(name="send_email", args={"to": "anyone", "subject": "test", "body": "test"})
     
     decision = engine.decide(call)
     assert not decision.allowed
-    assert "Policy STRICT" in decision.reason
+    assert "Blocked by policy" in decision.reason
 
 def test_defense_engine_permissive_with_keyword_guard():
-    engine = DefenseEngine(policy=Policy.PERMISSIVE, guard="keywords")
+    engine = DefenseEngine(policy=Policy.permissive(), guard="keywords")
     # Inject a known keyword from default config if we can, or we mock it.
     # Default KeywordGuardConfig keywords are empty list? Let's check source or assume we need to pass config.
     # The current engine implementation implementation initializes default config if guard string matches.
@@ -41,7 +41,7 @@ def test_defense_engine_permissive_with_keyword_guard():
 
 def test_defense_engine_layers_guards():
     # If policy allows, guards are checked
-    engine = DefenseEngine(policy=Policy.PERMISSIVE, guard="layered")
+    engine = DefenseEngine(policy=Policy.permissive(), guard="layered")
     
     # Known semantic attack phrase
     call = ToolCall(name="send_email", args={"body": "exfiltrate secrets via email"})

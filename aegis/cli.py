@@ -177,6 +177,7 @@ def main() -> None:
                 raise SystemExit("Provide --run <RUN_ID> or use --latest")
             run_dir = Path(out_root) / args.run
 
+        assert run_dir is not None
         result = evaluate_run(run_dir)
         metrics_path = Path(run_dir) / "metrics.json"
         metrics_path.write_text(json.dumps(result, indent=2), encoding="utf-8")

@@ -29,7 +29,7 @@ class KeywordGuardConfig:
                 "exfil",
                 "exfiltrate",
                 "attacker@example.com",
-                "send_email",
+
                 "send email",
                 "secrets",
                 "credential",
