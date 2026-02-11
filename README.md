@@ -13,7 +13,11 @@
 ## Architecture Overview
 
 ```mermaid
-flowchart LR
+flowchart TD
+    %% Minimalist Security Style
+    classDef default fill:#ffffff,stroke:#000000,stroke-width:1px,color:#000000,font-size:14px;
+    classDef node fill:#ffffff,stroke:#000000,stroke-width:1px,color:#000000,font-size:14px;
+    
     Scenario[Scenario] -->|Adversarial Input| Agent[Agent]
     Agent -->|Tool Proposal| Engine{Defense Engine}
     
@@ -30,6 +34,9 @@ flowchart LR
     Tool --> Trace[Trace Log]
     Block --> Trace
     Trace --> Metrics[Metrics & Reports]
+
+    %% Layout hints
+    linkStyle default stroke:#000000,stroke-width:1px,fill:none;
 ```
 
 ---
