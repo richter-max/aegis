@@ -1,7 +1,6 @@
 # AEGIS — Security Evaluation Harness for Tool-Using AI Agents
 
 ![CI](https://github.com/cleamax/aegis/actions/workflows/ci.yaml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-passing-green)
 ![Mypy](https://img.shields.io/badge/type%20checked-mypy-blue)
 ![Security](https://img.shields.io/badge/security-bandit-black)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
