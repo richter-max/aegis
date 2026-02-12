@@ -58,11 +58,12 @@ flowchart TD
 - **Reproducible benchmarks**: Configuration-driven experiments.
 - **Trace-based evidence**: Full JSONL event logging for forensic analysis.
 - **Fuzz-tested guard robustness**: Property-based testing via Hypothesis.
-- **Mocked high-risk tool actions**: Safe simulation of critical failures (e.g. data exfiltration).
+- **Mocked high-risk tool actions**: (e.g., simulated email exfiltration).
+
 
 ---
 
-## Benchmark Results
+## Benchmark Results (Example)
 
 | Policy | Guards | Attack Success Rate |
 | :--- | :--- | :--- |
@@ -82,7 +83,7 @@ AEGIS models attacks against **tool-using agents**:
 - **Indirect prompt injection**: Malicious instructions embedded in untrusted content.
 - **Context fragmentation**: Splitting payloads across multiple turns to bypass filters.
 - **Token smuggling / encoding abuse**: Hiding payloads via Base64 or other encodings.
-- **Tool misuse**: Unauthorized actions like email exfiltration or file deletion.
+- **Tool misuse**: Unauthorized actions such as simulated email exfiltration.
 
 ---
 
@@ -113,11 +114,11 @@ AEGIS runs scenarios through a layered defense pipeline:
 
 ## Design Decisions
 
-- **Deterministic Evaluation**: Security claims require reproducibility, not "vibes".
+- **Deterministic Evaluation**: Security experiments should be reproducible and evidence-based..
 - **Mocked Tools**: Safety first. Exploring "rm -rf" scenarios should never risk the host.
 - **Dependency-Free Semantic Guard**: Demonstrating that core NLP principles (n-grams) work without heavy ML libraries.
 - **Trace-First Architecture**: Evidence is the primary output. If it isn't logged, it didn't happen.
-- **Harness Separation**: The evaluation logic is distinct from the agent, preventing "grading your own homework".
+- **Harness Separation**: Evaluation logic is separated from agent execution to prevent self-evaluation bias.
 
 ---
 
@@ -131,9 +132,13 @@ AEGIS runs scenarios through a layered defense pipeline:
 
 ---
 
-## Security Command Center
+## Dashboard (Security Command Center)
 
-The Security Command Center provides visual inspection of traces and metrics.
+A Streamlit-based visualization layer for:
+- trace inspection
+- policy outcome comparison
+- benchmark summaries
+
 
 | Dashboard Overview | Policy Analytics | Trace Inspection |
 | :---: | :---: | :---: |
@@ -153,7 +158,11 @@ pip install -e .
 aegis bench --config configs/experiments/basic.json
 ```
 
-This generates `trace.jsonl` containing the full forensic record.
+Each run generates:
+- trace.jsonl (structured event log)
+- bench_summary.json (machine-readable metrics)
+- bench_summary.md (human-readable summary)
+
 
 ---
 
