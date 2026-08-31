@@ -140,7 +140,7 @@ jobs:
     # Advisory only. pip-audit reports vulnerabilities in transitive dependencies
     # that this project does not select and often cannot pin - a finding in the
     # runner's own setuptools should not turn the build red. Findings are visible
-    # in the job log and in the summary below.
+    # in the job log and in the run summary.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -157,12 +157,16 @@ jobs:
           pip install pip-audit
 
       - name: Audit dependencies
-        id: audit
         run: |
+          # pip-audit writes no report file when it finds nothing, so guard the read.
           pip-audit --desc --format markdown --output audit.md || true
           {
             echo "## Dependency audit"
             echo
-            cat audit.md
+            if [ -s audit.md ]; then
+              cat audit.md
+            else
+              echo "No known vulnerabilities found."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
           pip-audit
