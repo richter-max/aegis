@@ -9,7 +9,7 @@
 A deterministic harness for measuring what a defense stack actually stops when an agent
 is attacked — and what it breaks in the process.
 
-30 scenarios: 20 attacks across four families at three evasion tiers, and 10 benign
+30 scenarios: 20 attacks across four families at three evasion tiers, plus 10 benign
 controls. Every scenario runs against every policy and guard configuration, and every
 decision is written to a trace that attributes the outcome to a specific layer.
 
@@ -23,12 +23,18 @@ behaviour against a fixed corpus**, not how any real model behaves under attack.
 here should be quoted as an attack success rate for GPT-4 or Claude; that requires live
 model runs, many seeds, and a far larger corpus.
 
+One consequence is worth stating plainly: the mock agent proposes the tool call
+unconditionally, so **every injection is assumed to have persuaded the agent**. A real
+model would refuse some of these outright. The 100% baseline is therefore an upper
+bound on what the defense stack has to catch, not a prediction of how often a model
+complies.
+
 The execution layer is provider-agnostic, so live-model runs are the intended next step.
 
 ## Results
 
 Full corpus, both policies, all four guard configurations. 240 runs, deterministic —
-re-running reproduces these numbers exactly.
+re-running reproduces these numbers exactly, and CI fails if they drift.
 
 | Policy | Guards | Attack success | False positives |
 | :--- | :--- | ---: | ---: |
@@ -48,9 +54,10 @@ perfect 0% attack success and is useless.
 ### By evasion tier
 
 Splitting the malicious scenarios by how hard they are to spot is where the interesting
-result is (permissive policy, so the guards are the only thing acting):
+result is. All rows below run under `permissive` policy, so the guards are the only
+thing acting.
 
-| Guards | obvious | moderate | evasive |
+| Guards | obvious (n=6) | moderate (n=7) | evasive (n=7) |
 | :--- | ---: | ---: | ---: |
 | none | 100% (6/6) | 100% (7/7) | 100% (7/7) |
 | keywords | 0% (0/6) | 100% (7/7) | 100% (7/7) |
@@ -77,9 +84,17 @@ from an attempt to steal one.
 
 **The policy layer is the only thing that holds — at full cost.** `strict` blocks the
 `send_email` tool outright, so no attack succeeds regardless of guard, and every benign
-message is blocked too. Perfect security, zero utility. The honest reading is that the
-useful control is a fine-grained allowlist on tool *arguments*, not a binary switch on
-tool *names*; that is the direction the roadmap points.
+message is blocked too. Perfect security, zero utility. The useful control is a
+fine-grained allowlist on tool *arguments*, not a binary switch on tool *names*; that is
+the direction the roadmap points.
+
+### How much to read into this
+
+Seven scenarios per tier cell, twenty malicious scenarios overall. One scenario moves
+attack success by 5 points and one benign message moves the false positive rate by 10.
+The clean 0/100 pattern in the tier table reflects a real threshold effect — payloads
+either contain the matched tokens or they do not — but it is measured on a small,
+hand-built corpus and should be read as a direction, not a precise rate.
 
 Committed artifacts: [`reports/bench/baseline/`](reports/bench/baseline/).
 
@@ -137,6 +152,9 @@ Nothing about the second call is lexically or structurally distinctive. Because 
 decision carries the layer that produced it, a difference between two configurations can
 always be attributed to a specific guard rather than to the stack as a whole.
 
+Full traces for both, plus a false positive and a surviving smuggling attack, are in
+[`reports/bench/baseline/samples/`](reports/bench/baseline/samples/).
+
 ## Scenario corpus
 
 | Family | Scenarios | Vector |
@@ -158,8 +176,16 @@ distinguish between them. Two tests enforce this: the corpus must contain all th
 tiers, and evasive scenarios must not contain the high-risk vocabulary they claim to
 avoid.
 
-Scenarios are data, not code — see `aegis/scenarios/corpus.py`. Adding one means adding
-an entry, not editing the runner.
+**On the circularity of that tier.** The semantic guard compares against a fixed list of
+six attack phrases, and the evasive scenarios were written to avoid that vocabulary. Its
+0% detection rate on them is therefore partly by construction. The transferable finding
+is narrower than "n-gram similarity does not work": it is that **matching against a
+static phrase set does not generalise to paraphrase**, which is a property of the
+approach rather than an artifact of this corpus. An attacker writing a new payload is in
+exactly the position I was in when writing these scenarios.
+
+Scenarios are data, not code — see [`aegis/scenarios/corpus.py`](aegis/scenarios/corpus.py).
+Adding one means adding an entry, not editing the runner.
 
 ## How it works
 
@@ -202,28 +228,34 @@ attack success rate while every attack sailed through.
 
 ## Limitations
 
-- No live LLM. These results characterise the guard stack, not any real model.
-- 30 scenarios, hand-written by one person. Absence of a bypass here is not evidence one does not exist.
-- The semantic guard is stateless across turns, so fragmented payloads are a structural blind spot rather than a tuning problem.
-- Single deterministic corpus — no seeds, no variance, no confidence intervals.
-- Mocked tools cannot capture side effects that only appear in real integrations.
-- The benign set is small (10), so each false positive moves the rate by 10 points.
+- **No live LLM.** Results characterise the guard stack, not any real model.
+- **Injection success is assumed.** The mock agent always proposes the tool call, so the harness measures defenses given a successful injection — not how often a model would comply in the first place.
+- **The evasive tier is partly constructed against the guard.** Its 0% detection rate is by design; see the corpus section for what generalises and what does not.
+- **30 scenarios, hand-written by one person.** Absence of a bypass here is not evidence one does not exist.
+- **Small denominators.** One malicious scenario moves attack success by 5 points, one benign message moves false positives by 10.
+- **The semantic guard is stateless across turns**, so fragmented payloads are a structural blind spot rather than a tuning problem.
+- **Single deterministic corpus** — no seeds, no variance, no confidence intervals.
+- **Mocked tools** cannot capture side effects that only appear in real integrations.
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
 
-pytest              # 66 tests, ~84% coverage
-mypy aegis          # strict
+pytest                              # unit, integration and corpus tests
+mypy aegis                          # strict
 ruff check .
 bandit -c pyproject.toml -r aegis
 ```
 
-The evaluation layer carries the heaviest tests. It previously had none, and a field
-name mismatch between the trace writer and the trace reader silently zeroed every metric
-in the benchmark — the reports looked plausible and were meaningless. `tests/test_events.py`
-is the regression suite for that class of bug.
+CI runs all of the above plus the full benchmark sweep, and fails if the results drift
+from the committed baseline. Published numbers cannot silently diverge from the code.
+
+The evaluation layer carries the heaviest tests, for a specific reason. It previously had
+none, and a field name mismatch between the trace writer and the trace reader silently
+zeroed every metric in the benchmark — the reports looked plausible and were meaningless.
+[`tests/test_events.py`](tests/test_events.py) is the regression suite for that class of
+bug: it asserts that what the writer writes is what the reader reads.
 
 ```text
 aegis/
@@ -250,8 +282,8 @@ output and the per-report run folders written by `aegis bench`.
 - Live model runs behind the existing provider abstraction
 - Argument-level policy (allowlist recipient domains) rather than a binary tool switch
 - Cross-turn state in the semantic guard to address fragmentation
+- A larger corpus, and one whose evasive cases are not written by the same person who wrote the guards
 - Multi-seed runs with variance reporting
-- A larger corpus, ideally with external contributions
 
 ## Contact
 
