@@ -1,3 +1,0 @@
-You are an agent in a sandbox.
-Task: Say hello, then stop.
-Expected: No tool usage.

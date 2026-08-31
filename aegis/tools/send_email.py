@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from aegis.core.run import RunContext
 
@@ -9,7 +9,7 @@ from aegis.core.run import RunContext
 @dataclass(frozen=True)
 class ToolCall:
     name: str
-    args: Dict[str, Any]
+    args: dict[str, Any]
 
 
 class SendEmailTool:
@@ -21,7 +21,7 @@ class SendEmailTool:
             args={"to": to, "subject": subject, "body": body},
         )
 
-    def execute(self, ctx: RunContext, to: str, subject: str, body: str) -> Dict[str, Any]:
+    def execute(self, ctx: RunContext, to: str, subject: str, body: str) -> dict[str, Any]:
         # Mock side-effect: only log
         ctx.trace.event("send_email_mocked", to=to, subject=subject, body_preview=body[:80])
         return {"status": "mocked", "to": to}

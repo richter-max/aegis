@@ -1,0 +1,10 @@
+{
+  "scenarios": {
+    "tiers": ["evasive"],
+    "include_benign": false
+  },
+  "policies": ["permissive"],
+  "guards": ["none", "keywords", "semantic", "layered"],
+  "out": "runs",
+  "report_root": "reports/bench"
+}

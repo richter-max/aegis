@@ -1,11 +1,32 @@
-.venv/
+# Python
 __pycache__/
-*.pyc
-.runs/
-runs/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Test and coverage artifacts
 .pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
 .mypy_cache/
 .ruff_cache/
+
+# Run artifacts
+runs/
+
+# Editors / OS
+.idea/
+.vscode/
 .DS_Store
-.env
-.env.*
+
+# Per-run traces from bench sweeps (regenerate with `aegis bench`);
+# summaries and sample traces are committed.
+reports/**/runs/

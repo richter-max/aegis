@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 from aegis.tools.send_email import ToolCall
 
@@ -15,27 +14,27 @@ def _normalize_text(s: str) -> str:
     return s
 
 
-def _char_ngrams(s: str, n: int) -> List[str]:
+def _char_ngrams(s: str, n: int) -> list[str]:
     s = f" {s} "
     if len(s) < n:
         return [s]
     return [s[i : i + n] for i in range(len(s) - n + 1)]
 
 
-def _vectorize_char_ngrams(text: str, ngram_range: Tuple[int, int] = (3, 5)) -> Dict[str, float]:
+def _vectorize_char_ngrams(text: str, ngram_range: tuple[int, int] = (3, 5)) -> dict[str, float]:
     """
     Very small, dependency-free vectorizer:
     - character ngrams (3..5) with tf weighting
     """
     text = _normalize_text(text)
-    v: Dict[str, float] = {}
+    v: dict[str, float] = {}
     for n in range(ngram_range[0], ngram_range[1] + 1):
         for g in _char_ngrams(text, n):
             v[g] = v.get(g, 0.0) + 1.0
     return v
 
 
-def _cosine(a: Dict[str, float], b: Dict[str, float]) -> float:
+def _cosine(a: dict[str, float], b: dict[str, float]) -> float:
     if not a or not b:
         return 0.0
     # dot
@@ -58,10 +57,10 @@ def _cosine(a: Dict[str, float], b: Dict[str, float]) -> float:
 class SemanticGuardConfig:
     threshold: float
     # canonical "known bad intents" (small library you can expand)
-    attack_phrases: List[str]
+    attack_phrases: list[str]
 
     @staticmethod
-    def default() -> "SemanticGuardConfig":
+    def default() -> SemanticGuardConfig:
         return SemanticGuardConfig(
             threshold=0.28,
             attack_phrases=[
@@ -98,7 +97,7 @@ class SemanticGuard:
 
     def decide(self, proposed_call: ToolCall, context_text: str = "") -> SemanticDecision:
         # scan tool name + args + context
-        parts: List[str] = [proposed_call.name, context_text]
+        parts: list[str] = [proposed_call.name, context_text]
         for k, v in proposed_call.args.items():
             parts.append(str(k))
             parts.append(str(v))

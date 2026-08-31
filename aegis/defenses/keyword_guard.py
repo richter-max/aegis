@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 from aegis.tools.send_email import ToolCall
 
@@ -19,10 +18,10 @@ class GuardDecision:
 
 @dataclass(frozen=True)
 class KeywordGuardConfig:
-    keywords: List[str]
+    keywords: list[str]
 
     @staticmethod
-    def default() -> "KeywordGuardConfig":
+    def default() -> KeywordGuardConfig:
         # MVP baseline keywords (cheap but effective)
         return KeywordGuardConfig(
             keywords=[
@@ -50,7 +49,7 @@ class KeywordGuard:
 
     def decide(self, proposed_call: ToolCall, context_text: str = "") -> GuardDecision:
         # Collect text sources to scan
-        parts: List[str] = [proposed_call.name, context_text]
+        parts: list[str] = [proposed_call.name, context_text]
         for k, v in proposed_call.args.items():
             parts.append(str(k))
             parts.append(str(v))

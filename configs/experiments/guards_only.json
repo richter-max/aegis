@@ -1,0 +1,7 @@
+{
+  "scenarios": "all",
+  "policies": ["permissive"],
+  "guards": ["none", "keywords", "semantic", "layered"],
+  "out": "runs",
+  "report_root": "reports/bench"
+}

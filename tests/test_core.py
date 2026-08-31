@@ -1,8 +1,10 @@
-from aegis.core.trace import TraceWriter
-from aegis.defenses.engine import DefenseEngine
-from aegis.defenses.approval_monitor import Policy
-from aegis.tools.send_email import ToolCall
 import json
+
+from aegis.core.trace import TraceWriter
+from aegis.defenses.approval_monitor import Policy
+from aegis.defenses.engine import DefenseEngine
+from aegis.tools.send_email import ToolCall
+
 
 def test_trace_writer_creates_file(tmp_path):
     run_dir = tmp_path / "trace_test"

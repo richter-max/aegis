@@ -1,9 +1,12 @@
+import os
+
 import pytest
-from hypothesis import given, settings, HealthCheck, strategies as st
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
 from aegis.defenses.keyword_guard import KeywordGuard, KeywordGuardConfig
 from aegis.defenses.semantic_guard import SemanticGuard, SemanticGuardConfig
 from aegis.tools.send_email import ToolCall
-import os
 
 # CI-friendly settings
 if os.getenv("CI"):

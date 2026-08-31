@@ -1,6 +1,8 @@
 import pytest
+
 from aegis.core.run import RunContext, TraceWriter
 from aegis.defenses.approval_monitor import Policy
+
 
 @pytest.fixture
 def mock_run_context(tmp_path):

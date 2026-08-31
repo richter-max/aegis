@@ -2,6 +2,7 @@ from aegis.defenses.keyword_guard import KeywordGuard, KeywordGuardConfig
 from aegis.defenses.semantic_guard import SemanticGuard, SemanticGuardConfig
 from aegis.tools.send_email import ToolCall
 
+
 def test_keyword_guard_blocks_known_bad():
     guard = KeywordGuard(KeywordGuardConfig(keywords=["bad", "evil"]))
     call = ToolCall(name="send_email", args={"body": "this is evil content"})

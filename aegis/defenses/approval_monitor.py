@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
 from aegis.tools.send_email import ToolCall
 
@@ -15,15 +14,15 @@ class Decision:
 @dataclass(frozen=True)
 class Policy:
     # tool_name -> allowed?
-    tool_allowlist: Dict[str, bool]
+    tool_allowlist: dict[str, bool]
 
     @staticmethod
-    def default() -> "Policy":
+    def default() -> Policy:
         # Strict by default: block high-risk tools
         return Policy(tool_allowlist={"send_email": False})
 
     @staticmethod
-    def permissive() -> "Policy":
+    def permissive() -> Policy:
         # Intentionally unsafe demo policy: allow everything we defined
         return Policy(tool_allowlist={"send_email": True})
 

@@ -1,8 +1,9 @@
-import streamlit as st  # type: ignore
-import pandas as pd  # type: ignore
 import json
 from pathlib import Path
+
+import pandas as pd  # type: ignore
 import plotly.express as px  # type: ignore
+import streamlit as st  # type: ignore
 
 # Page Config
 st.set_page_config(
@@ -81,18 +82,30 @@ st.title("AEGIS SECURITY COMMAND CENTER")
 st.markdown("### AUTOMATED AGENT EVALUATION SYSTEM")
 st.markdown("---")
 
-# Load Runs
-RUNS_DIR = Path("runs")
-if not RUNS_DIR.exists():
-    st.error("No run data found. Initialize benchmark execution to generate telemetry.")
+# Load runs from both `aegis run` output and the per-report run folders
+# written by `aegis bench`, so a benchmark sweep is inspectable here too.
+def _discover_runs() -> list[Path]:
+    found: list[Path] = []
+    standalone = Path("runs")
+    if standalone.exists():
+        found.extend(d for d in standalone.iterdir() if (d / "trace.jsonl").is_file())
+    reports = Path("reports/bench")
+    if reports.exists():
+        found.extend(
+            d for d in reports.glob("*/runs/*") if (d / "trace.jsonl").is_file()
+        )
+    return sorted(found, key=lambda p: p.stat().st_mtime, reverse=True)
+
+
+runs = _discover_runs()
+if not runs:
+    st.error(
+        "No traces found. Run `aegis bench --config configs/experiments/full_sweep.json` "
+        "or `aegis run --scenario indirect_injection_01 --policy permissive` first."
+    )
     st.stop()
 
-runs = sorted([d for d in RUNS_DIR.iterdir() if d.is_dir()], reverse=True)
-run_opts = [r.name for r in runs]
-
-if not run_opts:
-    st.warning("Runs directory is empty.")
-    st.stop()
+run_opts = [str(r) for r in runs]
 
 with st.sidebar:
     st.header("CONFIGURATION")
@@ -102,7 +115,7 @@ with st.sidebar:
     st.markdown("**SYSTEM STATUS**")
     st.info("ACTIVE MONITORING")
 
-run_path = RUNS_DIR / selected_run_id
+run_path = Path(selected_run_id)
 trace_file = run_path / "trace.jsonl"
 
 if not trace_file.exists():
@@ -111,7 +124,7 @@ if not trace_file.exists():
 
 # Load Data
 data = []
-with open(trace_file, "r") as f:
+with open(trace_file) as f:
     for line in f:
         data.append(json.loads(line))
 
@@ -119,10 +132,9 @@ df = pd.DataFrame(data)
 
 # Metrics Processing
 total_events = len(df)
-if "kind" in df.columns:
-    approvals = df[df["kind"] == "tool_decision"].copy()
-else:
-    approvals = pd.DataFrame()
+approvals = (
+    df[df["kind"] == "tool_decision"].copy() if "kind" in df.columns else pd.DataFrame()
+)
 
 allowed_count = 0
 blocked_count = 0

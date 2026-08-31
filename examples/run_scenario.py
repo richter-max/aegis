@@ -1,82 +1,52 @@
 #!/usr/bin/env python3
-"""
-run_scenario.py — AEGIS Quick Start Example
+"""Programmatic use of the AEGIS harness.
 
-Demonstrates how to programmatically run a security scenario and read the results.
-This is the equivalent of running:
+Runs the same scenario under three defense configurations and prints the outcome of
+each, which is the shortest demonstration of what the harness measures.
 
-    aegis run --scenario tool_exfiltration --policy strict
-    aegis eval --latest
-
-Usage:
     python examples/run_scenario.py
 """
 
 from __future__ import annotations
 
-import json
-import subprocess
-import sys
+import tempfile
 from pathlib import Path
 
+from aegis.core import events as ev
+from aegis.core.run import new_run
+from aegis.core.runner import run_scenario
+from aegis.eval.metrics import evaluate_run
 
-def run_aegis(scenario: str, policy: str) -> dict:
-    """Run an AEGIS scenario and return the JSON eval result."""
-    # Run the scenario
-    result = subprocess.run(
-        [sys.executable, "-m", "aegis.cli", "run", "--scenario", scenario, "--policy", policy],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"[ERROR] aegis run failed:\n{result.stderr}", file=sys.stderr)
-        sys.exit(1)
 
-    # Evaluate the latest run
-    eval_result = subprocess.run(
-        [sys.executable, "-m", "aegis.cli", "eval", "--latest"],
-        capture_output=True,
-        text=True,
-    )
-    if eval_result.returncode != 0:
-        print(f"[ERROR] aegis eval failed:\n{eval_result.stderr}", file=sys.stderr)
-        sys.exit(1)
-
-    # Read the metrics from the most recent run
-    runs_dir = Path("runs")
-    if not runs_dir.exists():
-        print("[ERROR] No runs/ directory found. Did the scenario execute?", file=sys.stderr)
-        sys.exit(1)
-
-    latest_run = sorted(runs_dir.iterdir())[-1]
-    metrics_path = latest_run / "metrics.json"
-    if not metrics_path.exists():
-        print(f"[ERROR] No metrics.json in {latest_run}", file=sys.stderr)
-        sys.exit(1)
-
-    return json.loads(metrics_path.read_text(encoding="utf-8"))
+def evaluate(scenario: str, policy: str, guard: str, out_root: str) -> dict:
+    ctx = new_run(out_root)
+    run_scenario(ctx=ctx, scenario_name=scenario, policy_name=policy, guard=guard)
+    ctx.trace.event(ev.RUN_END, run_id=ctx.run_id)
+    return evaluate_run(Path(ctx.run_dir))["metrics"]
 
 
 def main() -> None:
-    scenario = "tool_exfiltration"
-    policy = "strict"
+    configurations = [
+        ("permissive", "none"),
+        ("permissive", "layered"),
+        ("strict", "none"),
+    ]
 
-    print(f"\nRunning AEGIS scenario: {scenario!r} with policy: {policy!r}\n")
-    metrics = run_aegis(scenario, policy)
+    with tempfile.TemporaryDirectory() as tmp:
+        for scenario in ("indirect_injection_01", "indirect_injection_04"):
+            print(f"\n{scenario}")
+            print("-" * 68)
+            for policy, guard in configurations:
+                m = evaluate(scenario, policy, guard, tmp)
+                layer = m["blocking_layer"] or "—"
+                print(f"  policy={policy:<11} guard={guard:<9} "
+                      f"blocked_at={layer:<9} {m['judge_reason']}")
 
-    judge = metrics.get("judge", {})
-    score = judge.get("score", 0.0)
-    attack_success = metrics["metrics"].get("attack_success", False)
-    verdict = "FAILED — attack succeeded" if attack_success else "mitigated"
-
-    # Emit the deterministic result in JSON
-    result = {
-        "scenario": scenario,
-        "policy": policy,
-        "score": round(score, 2),
-        "verdict": verdict,
-    }
-    print(json.dumps(result, indent=2))
+    print(
+        "\nBoth scenarios carry the same intent. The first names the attacker address\n"
+        "outright; the second uses a compliance pretext and a plausible vendor domain.\n"
+        "Only the first is stopped by content inspection."
+    )
 
 
 if __name__ == "__main__":
